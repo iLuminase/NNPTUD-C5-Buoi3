@@ -1,9 +1,11 @@
 // API URL
 const API_URL = "https://api.escuelajs.co/api/v1/products";
+const CATEGORIES_API_URL = "https://api.escuelajs.co/api/v1/categories";
 
 // Global state
 let allProducts = [];
 let filteredProducts = [];
+let allCategories = [];
 let currentPage = 1;
 let itemsPerPage = 10;
 let sortColumn = null;
@@ -79,6 +81,21 @@ async function fetchProducts() {
     return products;
   } catch (error) {
     console.error("Error fetching products:", error);
+    return [];
+  }
+}
+
+// Fetch categories from API
+async function fetchCategories() {
+  try {
+    const response = await fetch(CATEGORIES_API_URL);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const categories = await response.json();
+    return categories;
+  } catch (error) {
+    console.error("Error fetching categories:", error);
     return [];
   }
 }
@@ -375,8 +392,10 @@ function viewProductDetail(productId) {
   document.getElementById("edit-title").value = product.title;
   document.getElementById("edit-price").value = product.price;
   document.getElementById("edit-description").value = product.description;
-  document.getElementById("edit-category-id").value = product.category.id;
-  document.getElementById("edit-category-name").value = product.category.name;
+
+  // Populate and select category
+  populateCategorySelect("edit-category-id", product.category.id);
+
   document.getElementById("edit-images").value = product.images.join("\n");
 
   // Show image previews
@@ -387,6 +406,22 @@ function viewProductDetail(productId) {
     document.getElementById("modalProductDetail"),
   );
   modal.show();
+}
+
+// Populate category select dropdown
+function populateCategorySelect(selectId, selectedId = null) {
+  const select = document.getElementById(selectId);
+  select.innerHTML = '<option value="">-- Chọn danh mục --</option>';
+
+  allCategories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.id;
+    option.textContent = `${category.name} (ID: ${category.id})`;
+    if (selectedId && category.id == selectedId) {
+      option.selected = true;
+    }
+    select.appendChild(option);
+  });
 }
 
 // Update image previews
@@ -425,8 +460,14 @@ async function updateProduct() {
   );
   const imagesText = document.getElementById("edit-images").value.trim();
 
-  if (!title || !price || !description || !categoryId) {
-    alert("Vui lòng điền đầy đủ thông tin!");
+  if (!title || !price || !description || !categoryId || isNaN(categoryId)) {
+    alert("Vui lòng điền đầy đủ thông tin và chọn danh mục!");
+    console.error("Validation failed:", {
+      title,
+      price,
+      description,
+      categoryId,
+    });
     return;
   }
 
@@ -458,18 +499,10 @@ async function updateProduct() {
     });
 
     if (!response.ok) {
-      throw new Error("Update failed");
+      throw new Error(`Update failed with status: ${response.status}`);
     }
 
     const updatedProduct = await response.json();
-
-    // Update local data
-    const index = allProducts.findIndex((p) => p.id == productId);
-    if (index !== -1) {
-      allProducts[index] = updatedProduct;
-      filteredProducts = [...allProducts];
-      renderTable();
-    }
 
     // Close modal
     const modal = bootstrap.Modal.getInstance(
@@ -477,7 +510,13 @@ async function updateProduct() {
     );
     modal.hide();
 
-    alert("Cập nhật sản phẩm thành công!");
+    // Show success message
+    alert(
+      "Cập nhật sản phẩm thành công! Trang sẽ tự động tải lại để cập nhật dữ liệu.",
+    );
+
+    // Reload page to fetch fresh data from API
+    window.location.reload();
   } catch (error) {
     console.error("Error updating product:", error);
     alert("Lỗi khi cập nhật sản phẩm. Vui lòng thử lại!");
@@ -590,6 +629,9 @@ function initializeEventListeners() {
     document.getElementById("form-create-product").reset();
     document.getElementById("create-image-preview-list").innerHTML = "";
 
+    // Populate categories
+    populateCategorySelect("create-category-id");
+
     // Show modal
     const modal = new bootstrap.Modal(
       document.getElementById("modalCreateProduct"),
@@ -621,8 +663,9 @@ async function init() {
   const tableContainer = document.getElementById("table-container");
   const controlsSection = document.getElementById("controls-section");
 
-  // Fetch all products
+  // Fetch all products and categories
   allProducts = await fetchProducts();
+  allCategories = await fetchCategories();
   filteredProducts = [...allProducts];
 
   // Hide loading, show table

@@ -505,24 +505,12 @@
               </div>
 
               <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">Category ID</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="edit-category-id"
-                    required
-                    min="1"
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Category Name</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="edit-category-name"
-                    readonly
-                  />
+                <div class="col-md-12">
+                  <label class="form-label">Danh mục sản phẩm</label>
+                  <select class="form-select" id="edit-category-id" required>
+                    <option value="">-- Chọn danh mục --</option>
+                  </select>
+                  <small class="text-muted">Chọn danh mục cho sản phẩm</small>
                 </div>
               </div>
 
@@ -620,19 +608,12 @@
 
               <div class="mb-3">
                 <label class="form-label"
-                  >Category ID <span class="text-danger">*</span></label
+                  >Danh mục sản phẩm <span class="text-danger">*</span></label
                 >
-                <input
-                  type="number"
-                  class="form-control"
-                  id="create-category-id"
-                  required
-                  min="1"
-                  value="1"
-                />
-                <small class="text-muted"
-                  >Nhập ID của danh mục (ví dụ: 1, 2, 3...)</small
-                >
+                <select class="form-select" id="create-category-id" required>
+                  <option value="">-- Chọn danh mục --</option>
+                </select>
+                <small class="text-muted">Chọn danh mục cho sản phẩm mới</small>
               </div>
 
               <div class="mb-3">
