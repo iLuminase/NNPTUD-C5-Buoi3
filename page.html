@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Products Management Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <!-- Custom CSS -->
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-gradient: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);
+        --danger-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .navbar {
+        background: var(--primary-gradient) !important;
+        box-shadow: var(--shadow-md);
+      }
+
+      .product-image-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .product-image-thumb:hover {
+        transform: scale(1.15) rotate(2deg);
+        box-shadow: var(--shadow-md);
+        z-index: 10;
+      }
+
+      .sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        transition: all 0.2s ease;
+        font-weight: 600;
+      }
+
+      .sortable:hover {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #1976d2;
+      }
+
+      .sort-icon {
+        opacity: 0.4;
+        font-size: 0.85rem;
+        margin-left: 6px;
+        transition: all 0.3s ease;
+      }
+
+      .sortable:hover .sort-icon {
+        opacity: 0.7;
+      }
+
+      .sortable.active {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #1976d2;
+      }
+
+      .sortable.active .sort-icon {
+        opacity: 1;
+        color: #1976d2;
+      }
+
+      .description-cell {
+        max-width: 300px;
+        position: static;
+      }
+
+      .description-preview {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: help;
+        padding: 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+        position: relative;
+      }
+
+      .description-preview:hover {
+        background-color: #f8f9fa;
+      }
+
+      .description-tooltip {
+        position: fixed;
+        bottom: auto;
+        top: auto;
+        left: auto;
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        z-index: 9999;
+        min-width: 350px;
+        max-width: 500px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        font-size: 0.95rem;
+        line-height: 1.7;
+        white-space: normal;
+        word-wrap: break-word;
+        pointer-events: none;
+      }
+
+      .description-tooltip::after {
+        content: "";
+        position: absolute;
+        border: 10px solid transparent;
+      }
+
+      .description-cell:hover .description-tooltip {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      /* Ensure table container doesn't clip tooltips */
+      .table-responsive {
+        overflow: visible !important;
+      }
+
+      .table {
+        margin: 0;
+        overflow: visible;
+      }
+
+      .loading-spinner {
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .table-responsive {
+        display: none;
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+      }
+
+      .table {
+        margin: 0;
+      }
+
+      .table thead {
+        background: var(--primary-gradient);
+        color: white;
+      }
+
+      .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .table tbody tr:hover {
+        background: linear-gradient(90deg, #f8f9fa 0%, #e3f2fd 100%);
+        transform: scale(1.01);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .controls-section {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 24px;
+      }
+
+      .pagination-info {
+        color: #6c757d;
+        font-size: 0.95rem;
+        font-weight: 500;
+      }
+
+      .action-btn {
+        cursor: pointer;
+        padding: 6px 10px;
+        margin: 0 3px;
+        border-radius: 6px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn-success {
+        background: var(--success-gradient);
+        border: none;
+      }
+
+      .btn-primary {
+        background: var(--primary-gradient);
+        border: none;
+      }
+
+      .form-control,
+      .form-select {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 10px 16px;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus,
+      .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+      }
+
+      .input-group-text {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #e9ecef;
+        border-radius: 8px 0 0 8px;
+      }
+
+      .badge {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+      }
+
+      .pagination .page-link {
+        border-radius: 8px;
+        margin: 0 4px;
+        border: 2px solid #e9ecef;
+        color: #667eea;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .pagination .page-link:hover {
+        background: var(--primary-gradient);
+        color: white;
+        border-color: transparent;
+        transform: translateY(-2px);
+      }
+
+      .pagination .page-item.active .page-link {
+        background: var(--primary-gradient);
+        border-color: transparent;
+      }
+
+      .modal-content {
+        border-radius: 16px;
+        box-shadow: var(--shadow-lg);
+        border: none;
+      }
+
+      .modal-header {
+        background: var(--primary-gradient);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 20px 24px;
+      }
+
+      .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+      }
+
+      .modal-body {
+        padding: 24px;
+      }
+
+      .modal-image-preview {
+        max-width: 100%;
+        max-height: 200px;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .image-input-preview {
+        max-width: 100%;
+        max-height: 150px;
+        object-fit: contain;
+        margin-top: 10px;
+        border-radius: 8px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+      }
+
+      .image-input-preview:hover {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-md);
+      }
+
+      /* Smooth animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .table-responsive {
+        animation: fadeIn 0.5s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark bg-primary mb-4">
+      <div class="container-fluid">
+        <span class="navbar-brand mb-0 h1">
+          <i class="bi bi-grid-3x3-gap-fill"></i> Products Management Dashboard
+        </span>
+      </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid px-4">
+      <!-- Loading Spinner -->
+      <div id="loading" class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <!-- Controls Section -->
+      <div class="controls-section" style="display: none" id="controls-section">
+        <div class="row g-3 align-items-center mb-3">
+          <!-- Create Button -->
+          <div class="col-md-3">
+            <button class="btn btn-success w-100" id="btn-create-product">
+              <i class="bi bi-plus-circle"></i> Tạo sản phẩm mới
+            </button>
+          </div>
+          <!-- Export Button -->
+          <div class="col-md-3">
+            <button class="btn btn-primary w-100" id="btn-export-csv">
+              <i class="bi bi-download"></i> Export CSV
+            </button>
+          </div>
+        </div>
+        <div class="row g-3 align-items-center">
+          <!-- Search -->
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-search"></i>
+              </span>
+              <input
+                type="text"
+                class="form-control"
+                id="search-input"
+                placeholder="Tìm kiếm theo tên sản phẩm..."
+              />
+            </div>
+          </div>
+
+          <!-- Items per page -->
+          <div class="col-md-3">
+            <div class="input-group">
+              <label class="input-group-text" for="items-per-page"
+                >Hiển thị:</label
+              >
+              <select class="form-select" id="items-per-page">
+                <option value="5">5 sản phẩm</option>
+                <option value="10" selected>10 sản phẩm</option>
+                <option value="20">20 sản phẩm</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Total count -->
+          <div class="col-md-3 text-end">
+            <span class="pagination-info">
+              Tổng: <strong id="total-count">0</strong> sản phẩm
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Table -->
+      <div class="table-responsive" id="table-container">
+        <table class="table table-hover table-bordered bg-white">
+          <thead class="table-primary">
+            <tr>
+              <th style="width: 80px">ID</th>
+              <th class="sortable" data-column="title" style="width: 250px">
+                Tên sản phẩm
+                <i class="bi bi-arrow-down-up sort-icon"></i>
+              </th>
+              <th class="sortable" data-column="price" style="width: 120px">
+                Giá ($)
+                <i class="bi bi-arrow-down-up sort-icon"></i>
+              </th>
+              <th style="width: 150px">Danh mục</th>
+              <th style="width: 100px">Hình ảnh</th>
+              <th>Mô tả</th>
+              <th style="width: 120px">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="products-tbody">
+            <!-- Products will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <nav
+        aria-label="Product pagination"
+        id="pagination-container"
+        style="display: none"
+      >
+        <ul class="pagination justify-content-center" id="pagination">
+          <!-- Pagination buttons will be inserted here -->
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Modal View/Edit Product Detail -->
+    <div class="modal fade" id="modalProductDetail" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Chi tiết sản phẩm</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="form-edit-product">
+              <input type="hidden" id="edit-product-id" />
+
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Tên sản phẩm</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="edit-title"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Giá ($)</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="edit-price"
+                    required
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Mô tả</label>
+                <textarea
+                  class="form-control"
+                  id="edit-description"
+                  rows="3"
+                  required
+                ></textarea>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Category ID</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="edit-category-id"
+                    required
+                    min="1"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Category Name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="edit-category-name"
+                    readonly
+                  />
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label"
+                  >URL Hình ảnh (mỗi URL trên 1 dòng)</label
+                >
+                <textarea
+                  class="form-control"
+                  id="edit-images"
+                  rows="3"
+                  placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+                ></textarea>
+                <small class="text-muted"
+                  >Nhập mỗi URL hình ảnh trên một dòng</small
+                >
+              </div>
+
+              <div class="mb-3" id="image-preview-container">
+                <label class="form-label">Preview hình ảnh:</label>
+                <div
+                  id="image-preview-list"
+                  class="d-flex gap-2 flex-wrap"
+                ></div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Đóng
+            </button>
+            <button type="button" class="btn btn-primary" id="btn-save-edit">
+              <i class="bi bi-save"></i> Lưu thay đổi
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Create New Product -->
+    <div class="modal fade" id="modalCreateProduct" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Tạo sản phẩm mới</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="form-create-product">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label"
+                    >Tên sản phẩm <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="create-title"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label"
+                    >Giá ($) <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="create-price"
+                    required
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label"
+                  >Mô tả <span class="text-danger">*</span></label
+                >
+                <textarea
+                  class="form-control"
+                  id="create-description"
+                  rows="3"
+                  required
+                ></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label"
+                  >Category ID <span class="text-danger">*</span></label
+                >
+                <input
+                  type="number"
+                  class="form-control"
+                  id="create-category-id"
+                  required
+                  min="1"
+                  value="1"
+                />
+                <small class="text-muted"
+                  >Nhập ID của danh mục (ví dụ: 1, 2, 3...)</small
+                >
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label"
+                  >URL Hình ảnh <span class="text-danger">*</span></label
+                >
+                <textarea
+                  class="form-control"
+                  id="create-images"
+                  rows="3"
+                  required
+                  placeholder="https://placehold.co/600x400&#10;https://placehold.co/600x400&#10;https://placehold.co/600x400"
+                ></textarea>
+                <small class="text-muted"
+                  >Nhập mỗi URL hình ảnh trên một dòng (cần ít nhất 1
+                  URL)</small
+                >
+              </div>
+
+              <div class="mb-3" id="create-image-preview-container">
+                <label class="form-label">Preview hình ảnh:</label>
+                <div
+                  id="create-image-preview-list"
+                  class="d-flex gap-2 flex-wrap"
+                ></div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button type="button" class="btn btn-success" id="btn-save-create">
+              <i class="bi bi-plus-circle"></i> Tạo sản phẩm
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Main JS -->
+    <script defer src="main.js"></script>
+  </body>
+</html>
